@@ -1,6 +1,6 @@
 from fastapi import FastAPI
+from routes import free_cell_route
+
 app = FastAPI()
 
-@app.get("/")
-async def root():
-   return {"message": "Hello World"}
+app.include_router(free_cell_route.router)
