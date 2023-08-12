@@ -17,3 +17,10 @@ engine = create_engine(url_object)
 Session = sessionmaker(engine)
 
 session = Session()
+
+def get_db():
+    db = session
+    try:
+        yield db
+    finally:
+        db.close()
