@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from database import get_db
 from models.free_cell import FreeCell
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from payloads.free_cell_payload import FreeCellUpdate
 from models.enums import GameStatusArray
+from models.user import User
 
 router = APIRouter(
     prefix="/api/free_cell",
@@ -14,15 +15,16 @@ router = APIRouter(
 @router.get("/")
 async def free_cells_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
     count = db.query(FreeCell).where(FreeCell.Status != 1).count()
+    users = db.query(User).all()
     items = db.query(FreeCell).where(FreeCell.Status != 1).order_by(
         FreeCell.Status.desc(),
         FreeCell.Moves.asc()
-    ).limit(Limit).offset(Offset).all()
+    ).limit(Limit).offset(Offset).options(joinedload(FreeCell.user)).all()
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{free_cell_id}")
 async def get_free_cell_by_id(free_cell_id: int, db: Session = Depends(get_db)):
-    free_cell = db.query(FreeCell).get(free_cell_id)
+    free_cell = db.query(FreeCell).where(FreeCell.id == free_cell_id).options(joinedload(FreeCell.user)).first()
     if free_cell is None:
         raise HTTPException(status_code=404, detail="Free Cell not found")
     return free_cell

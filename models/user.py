@@ -1,12 +1,14 @@
 from .base import Base
 from sqlalchemy import Column, BigInteger, String, Integer, DateTime
+from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(BigInteger, primary_key=True)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
-    UserName = Column(String(30))
-    password_digest = Column(String(255))
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[str] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    UserName: Mapped[str] = mapped_column(String(30))
+    password_digest: Mapped[str] = mapped_column(String(255))
     

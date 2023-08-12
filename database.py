@@ -1,6 +1,10 @@
 from dotenv import dotenv_values
 from sqlalchemy import URL, create_engine
 from sqlalchemy.orm import sessionmaker
+# import logging
+
+# logging.basicConfig()
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 config = dotenv_values(".env")
 

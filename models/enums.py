@@ -1,6 +1,6 @@
 from enum import Enum
 
-class GameStatus(str,Enum):
+class GameStatus(Enum):
     Lost = "Lost"
     Playing = "Playing"
     Won = "Won"
