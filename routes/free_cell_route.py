@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from database import get_db
 from models.free_cell import FreeCell
 from sqlalchemy.orm import Session
@@ -19,8 +19,11 @@ async def free_cells_paginated(Limit: int = 10, Offset: int = 0, db: Session = D
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{free_cell_id}")
-async def get_free_cell_by_id(free_cell_id: int):
-    return {"message": "TODO"}
+async def get_free_cell_by_id(free_cell_id: int, db: Session = Depends(get_db)):
+    free_cell = db.query(FreeCell).get(free_cell_id)
+    if free_cell is None:
+        raise HTTPException(status_code=404, detail="Free Cell not found")
+    return free_cell
 
 @router.post("/")
 async def create_free_cell():
