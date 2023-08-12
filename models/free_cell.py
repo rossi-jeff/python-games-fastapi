@@ -1,5 +1,5 @@
 from .base import Base
-from sqlalchemy import Column, BigInteger, String, Integer, DateTime, relationship
+from sqlalchemy import Column, BigInteger, String, Integer, DateTime, ForeignKey
 
 class FreeCell(Base):
     __tablename__ = "free_cells"
@@ -11,5 +11,3 @@ class FreeCell(Base):
     Elapsed = Column(Integer)
     Status = Column(Integer)
     user_id = Column(BigInteger, ForeignKey("users.id"), nullable=True)
-    
-    user: relationship("User")
