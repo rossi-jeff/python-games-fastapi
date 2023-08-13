@@ -14,10 +14,13 @@ router = APIRouter(
 @router.get("/")
 async def concentrations_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
     count = db.query(Concentration).where(Concentration.Status != 1).count()
-    items = db.query(Concentration).where(Concentration.Status != 1).order_by(
+    concentrations = db.query(Concentration).where(Concentration.Status != 1).order_by(
         Concentration.Status.desc(),
         Concentration.Moves.asc()
     ).limit(Limit).offset(Offset).options(joinedload(Concentration.user)).all()
+    items = []
+    for conc in concentrations:
+        items.append(conc.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 
@@ -26,7 +29,7 @@ async def get_concentration_by_id(concentration_id: int, db: Session = Depends(g
     concentration = db.query(Concentration).where(Concentration.id == concentration_id).options(joinedload(Concentration.user)).first()
     if concentration is None:
         raise HTTPException(status_code=404, detail="Concentration not found")
-    return concentration
+    return concentration.as_dict()
 
 @router.post("/")
 async def create_concentration(db: Session = Depends(get_db)):
@@ -39,7 +42,7 @@ async def create_concentration(db: Session = Depends(get_db)):
     db.add(concentration)
     db.commit()
     db.refresh(concentration)
-    return concentration
+    return concentration.as_dict()
 
 @router.patch("/{concentration_id}")
 async def update_concentration(concentration_id: int, body: ConcentrationUpdate, db: Session = Depends(get_db)):
@@ -53,4 +56,4 @@ async def update_concentration(concentration_id: int, body: ConcentrationUpdate,
     db.add(concentration)
     db.commit()
     db.refresh(concentration)
-    return concentration
+    return concentration.as_dict()

@@ -4,6 +4,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.user import User
 from typing import Optional
+from models.enums import GameStatusArray
 
 class Concentration(Base):
     __tablename__ = "concentrations"
@@ -18,3 +19,13 @@ class Concentration(Base):
     user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True)
 
     user: Mapped[Optional["User"]] = relationship("User")
+
+    def as_dict(self):
+        d = {}
+        for c in self.__table__.columns:
+            if c.name == "Status":
+                d[c.name] = GameStatusArray[getattr(self,c.name)]
+            else:
+                d[c.name] = getattr(self,c.name)
+        d["user"] = getattr(self,"user")
+        return d

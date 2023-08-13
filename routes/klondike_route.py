@@ -14,10 +14,13 @@ router = APIRouter(
 @router.get("/")
 async def klondikes_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
     count = db.query(Klondike).where(Klondike.Status != 1).count()
-    items = db.query(Klondike).where(Klondike.Status != 1).order_by(
+    klondikes = db.query(Klondike).where(Klondike.Status != 1).order_by(
         Klondike.Status.desc(),
         Klondike.Moves.asc()
     ).limit(Limit).offset(Offset).options(joinedload(Klondike.user)).all()
+    items = []
+    for klondike in klondikes:
+        items.append(klondike.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{klondike_id}")
@@ -25,7 +28,7 @@ async def get_klondike_by_id(klondike_id: int, db: Session = Depends(get_db)):
     klondike = db.query(Klondike).where(Klondike.id == klondike_id).options(joinedload(Klondike.user)).first()
     if klondike is None:
         raise HTTPException(status_code=404, detail="Klondike not found")
-    return klondike
+    return klondike.as_dict()
 
 @router.post("/")
 async def create_klondike(db: Session = Depends(get_db)):
@@ -37,7 +40,7 @@ async def create_klondike(db: Session = Depends(get_db)):
     db.add(klondike)
     db.commit()
     db.refresh(klondike)
-    return klondike
+    return klondike.as_dict()
 
 @router.patch("/{klondike_id}")
 async def update_klondike(klondike_id: int, body: KlondikeUpdate, db: Session = Depends(get_db)):
@@ -50,4 +53,4 @@ async def update_klondike(klondike_id: int, body: KlondikeUpdate, db: Session = 
     db.add(klondike)
     db.commit()
     db.refresh(klondike)
-    return klondike
+    return klondike.as_dict()

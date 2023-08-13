@@ -14,10 +14,13 @@ router = APIRouter(
 @router.get("/")
 async def free_cells_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
     count = db.query(FreeCell).where(FreeCell.Status != 1).count()
-    items = db.query(FreeCell).where(FreeCell.Status != 1).order_by(
+    free_cells = db.query(FreeCell).where(FreeCell.Status != 1).order_by(
         FreeCell.Status.desc(),
         FreeCell.Moves.asc()
     ).limit(Limit).offset(Offset).options(joinedload(FreeCell.user)).all()
+    items = []
+    for cell in free_cells:
+        items.append(cell.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{free_cell_id}")
@@ -25,7 +28,7 @@ async def get_free_cell_by_id(free_cell_id: int, db: Session = Depends(get_db)):
     free_cell = db.query(FreeCell).where(FreeCell.id == free_cell_id).options(joinedload(FreeCell.user)).first()
     if free_cell is None:
         raise HTTPException(status_code=404, detail="Free Cell not found")
-    return free_cell
+    return free_cell.as_dict()
 
 @router.post("/")
 async def create_free_cell(db: Session = Depends(get_db)):
@@ -37,7 +40,7 @@ async def create_free_cell(db: Session = Depends(get_db)):
     db.add(free_cell)
     db.commit()
     db.refresh(free_cell)
-    return free_cell
+    return free_cell.as_dict()
 
 @router.patch("/{free_cell_id}")
 async def update_free_cell(free_cell_id: int, body: FreeCellUpdate, db: Session = Depends(get_db)):
@@ -50,4 +53,4 @@ async def update_free_cell(free_cell_id: int, body: FreeCellUpdate, db: Session 
     db.add(free_cell)
     db.commit()
     db.refresh(free_cell)
-    return free_cell
+    return free_cell.as_dict()

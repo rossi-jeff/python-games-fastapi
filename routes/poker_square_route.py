@@ -14,10 +14,13 @@ router = APIRouter(
 @router.get("/")
 async def poker_squares_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
     count = db.query(PokerSquare).where(PokerSquare.Status != 1).count()
-    items = db.query(PokerSquare).where(PokerSquare.Status != 1).order_by(
+    poker_squares = db.query(PokerSquare).where(PokerSquare.Status != 1).order_by(
         PokerSquare.Status.desc(),
         PokerSquare.Score.asc()
     ).limit(Limit).offset(Offset).options(joinedload(PokerSquare.user)).all()
+    items = []
+    for square in poker_squares:
+        items.append(square.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{poker_square_id}")
@@ -36,7 +39,7 @@ async def create_poker_square(db: Session = Depends(get_db)):
     db.add(poker_square)
     db.commit()
     db.refresh(poker_square)
-    return poker_square
+    return poker_square.as_dict()
 
 @router.patch("/{poker_square_id}")
 async def update_poker_square(poker_square_id: int, body: PokerSquareUpdate, db: Session = Depends(get_db)):
@@ -48,4 +51,4 @@ async def update_poker_square(poker_square_id: int, body: PokerSquareUpdate, db:
     db.add(poker_square)
     db.commit()
     db.refresh(poker_square)
-    return poker_square
+    return poker_square.as_dict()
