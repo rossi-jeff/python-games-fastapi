@@ -7,7 +7,7 @@ class Word(Base):
     __tablename__ = "words"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[str] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[str] = mapped_column(DateTime, default=func.now())
+    updated_at: Mapped[str] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
     Word: Mapped[str] = mapped_column(String(30))
     Length: Mapped[int] = mapped_column(Integer)
