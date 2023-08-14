@@ -9,8 +9,10 @@ from utilities.guess_word import (
     MatchGreen,
     MatchBrown,
     MatchGray,
-    IncludeAllBrown
+    IncludeAllBrown,
+    CalculateGuessRatings
 )
+from models.guess_word_guess import GuessWordGuess
 
 router = APIRouter(
     prefix="/api/guess_word",
@@ -51,7 +53,16 @@ async def create_guess_word(body: GuessWordCreate, db: Session = Depends(get_db)
 
 @router.post("/{guess_word_id}/guess")
 async def take_guess_word_guess(guess_word_id: int, body: GuessWordGuessPayload, db: Session = Depends(get_db)):
-    return { "message": "TODO" }
+    guess_word_guess = GuessWordGuess(
+        guess_word_id = guess_word_id,
+        Guess = body.Guess
+    )
+    db.add(guess_word_guess)
+    db.commit()
+    db.refresh(guess_word_guess)
+    CalculateGuessRatings(db,guess_word_guess.id,body.Guess,body.Word)
+    db.refresh(guess_word_guess)
+    return guess_word_guess.as_dict()
 
 @router.post("/hint")
 async def get_guess_word_hints(body: GuessWordHint, db: Session = Depends(get_db)):
@@ -60,10 +71,13 @@ async def get_guess_word_hints(body: GuessWordHint, db: Session = Depends(get_db
     print("words",len(words))
     for w in words:
         word = w.Word
-        if (MatchGreen(word,body.Green) 
-                and not MatchGray(word,body.Gray,body.Green) 
-                and not MatchBrown(word,body.Brown) 
-                and IncludeAllBrown(word,body.Brown)
-                ):
-            hints.append(word)
+        if not MatchGreen(word,body.Green):
+            continue
+        if MatchGray(word,body.Gray,body.Green):
+            continue
+        if MatchBrown(word,body.Brown):
+            continue
+        if not IncludeAllBrown(word,body.Brown):
+            continue
+        hints.append(word)
     return hints

@@ -1,4 +1,38 @@
 from typing import List
+from sqlalchemy.orm import Session
+from models.guess_word_guess_rating import GuessWordGuessRating
+from models.enums import RatingArray
+
+def CalculateGuessRatings(db: Session, guess_id: int, Guess: str, Word: str):
+    count = 0
+    green = []
+    brown = []
+    guess = list(Guess)
+    word = list(Word)
+    for idx in range(len(guess)):
+        if guess[idx] == word[idx]:
+            word[idx] = ""
+            green.append(i)
+            count = count + 1
+    for i in range(len(guess)):
+        if IntListIndex(i,green) == -1:
+            for j in range(len(word)):
+                if word[j] == guess[i]:
+                    word[j] = ""
+                    brown.append(i)
+    for i in range(len(guess)):
+        rating = "Gray"
+        if IntListIndex(i,green) != -1:
+            rating = "Green"
+        elif IntListIndex(i,brown) != -1:
+            rating = "Brown"
+        gwgr = GuessWordGuessRating(
+            guess_word_guess_id = guess_id,
+            Rating = RatingArray.index(rating)
+        )
+        db.add(gwgr)
+        db.commit()
+    return count
 
 def MatchGreen(word: str, green: List[str]):
     if NoGreen(green):
@@ -51,3 +85,9 @@ def ListContains(token: str, argList: List[str]):
         if letter == token:
             return True
     return False
+
+def IntListIndex(token: int, intList: List[int]):
+    for idx in range(len(intList)):
+        if intList[idx] == token:
+            return idx
+    return -1
