@@ -31,3 +31,10 @@ class Keys(Enum):
     White = "White"
 
 KeysArray = ["Black", "White"]
+
+class Rating(Enum):
+    Gray = "Gray"
+    Brown = "Brown"
+    Green = "Green"
+
+RatingArray = ["Gray","Brown","Green"]
