@@ -3,7 +3,7 @@
 in a virtual env
 
 ```
-pip install fastapi sqlalchemy uvicorn python-dotenv pymysql
+pip install fastapi sqlalchemy uvicorn python-dotenv pymysql pyjwt bcrypt
 ```
 
 to start server
