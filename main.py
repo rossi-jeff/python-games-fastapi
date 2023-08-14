@@ -1,8 +1,13 @@
 from fastapi import FastAPI
-from routes import free_cell_route, word_route, concentration_route, klondike_route, poker_square_route, spider_route, code_breaker_route, guess_word_route
+from routes import (
+    free_cell_route, word_route, concentration_route, klondike_route, 
+    poker_square_route, spider_route, code_breaker_route, guess_word_route,
+    auth_route
+)
 
 app = FastAPI()
 
+app.include_router(auth_route.router)
 app.include_router(code_breaker_route.router)
 app.include_router(concentration_route.router)
 app.include_router(free_cell_route.router)
