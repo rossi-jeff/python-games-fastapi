@@ -4,7 +4,9 @@ from models.sea_battle import SeaBattle
 from sqlalchemy.orm import Session, joinedload
 from payloads.sea_battle_payload import SeaBattleCreate, SeaBattleShipPayload, SeaBattleFire
 from models.sea_battle_ship import SeaBattleShip
-from models.enums import ShipTypeArray, NavyArray
+from models.enums import ShipTypeArray, NavyArray, Navy
+from models.sea_battle_ship_grid_point import SeaBattleShipGridPoint
+from utilities.sea_battle import OpponentShipPoints
 
 router = APIRouter(
     prefix="/api/sea_battle",
@@ -55,7 +57,30 @@ async def sea_battle_create_ship(sea_battle_id: int, body: SeaBattleShipPayload,
         Size = body.Size,
         Sunk = False
     )
-    return { "message": "TODO" }
+    db.add(sea_battle_ship)
+    db.commit()
+    db.refresh(sea_battle_ship)
+    if body.Navy == Navy.Player:
+        for point in body.Points:
+            sbsgp = SeaBattleShipGridPoint(
+                sea_battle_ship_id = sea_battle_ship.id,
+                Horizontal = point.Horizontal,
+                Vertical = point.Vertical
+            )
+            db.add(sbsgp)
+            db.commit()
+    else:
+        points = OpponentShipPoints(db,sea_battle_id,sea_battle.Axis,body.Size)
+        for point in points:
+            sbsgp = SeaBattleShipGridPoint(
+                sea_battle_ship_id = sea_battle_ship.id,
+                Horizontal = point["Horizontal"],
+                Vertical = point["Vertical"]
+            )
+            db.add(sbsgp)
+            db.commit()
+    db.refresh(sea_battle_ship)
+    return sea_battle_ship.as_dict()
 
 @router.post("/{sea_battle_id}/fire")
 async def sea_battle_fire(sea_battle_id: int, body: SeaBattleFire, db: Session = Depends(get_db)):
