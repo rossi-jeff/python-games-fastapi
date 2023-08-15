@@ -17,6 +17,7 @@ class SeaBattleShip(Base):
     Navy: Mapped[str] = mapped_column(Integer)
     Size: Mapped[int] = mapped_column(Integer)
     Sunk: Mapped[bool] = mapped_column(Boolean)
+    sea_battle_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("sea_battles.id"))
     
     hits: Mapped[List["SeabattleShipHit"]] = relationship()
     points: Mapped[List["SeaBattleShipGridPoint"]] = relationship()
