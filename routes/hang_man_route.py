@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from models.hang_man import HangMan
 from payloads.hang_man_payload import HangManCreate, HangManGuess
 from utilities.guess_word import ListContains
+from utilities.hang_man import CalculateHangManStatus, CalculateHangManScore, StringListUnique
+from models.enums import GameStatusArray
 
 router = APIRouter(
     prefix="/api/hang_man",
@@ -49,16 +51,20 @@ async def hang_man_guess(hang_man_id: int, body: HangManGuess, db: Session = Dep
     hang_man = db.query(HangMan).where(HangMan.id == hang_man_id).first()
     if hang_man is None:
         raise HTTPException(status_code=404, detail="Hang Man not found")
-    correct = list(hang_man.Correct)
-    wrong = list(hang_man.Wrong)
+    correct = hang_man.Correct.split(",")
+    wrong = hang_man.Wrong.split(",")
     word = list(body.Word)
     found: bool = ListContains(body.Letter,word)
     if found:
         correct.append(body.Letter)
     else:
         wrong.append(body.Letter)
-    hang_man.Correct = ",".join(correct)
-    hang_man.Wrong = ",".join(wrong)
+    hang_man.Correct = ",".join(StringListUnique(correct))
+    hang_man.Wrong = ",".join(StringListUnique(wrong))
+    status = CalculateHangManStatus(word,correct,wrong) 
+    if status != "Playing":
+        hang_man.Status = GameStatusArray.index(status)
+        hang_man.Score = CalculateHangManScore(word,correct,wrong,status)
     db.add(hang_man)
     db.commit()
     db.refresh(hang_man)
