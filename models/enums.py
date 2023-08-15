@@ -38,3 +38,27 @@ class Rating(Enum):
     Green = "Green"
 
 RatingArray = ["Gray","Brown","Green"]
+
+class ShipType(Enum):
+    BattleShip = "BattleShip"
+    Carrier = "Carrier"
+    Cruiser = "Cruiser"
+    PatrolBoat = "PatrolBoat"
+    SubMarine = "SubMarine"
+    
+ShipTypeArray = ["BattleShip","Carrier","Cruiser","PatrolBoat","SubMarine"]
+
+ShipTypeSize = {"BattleShip": 4,"Carrier": 5,"Cruiser": 3,"PatrolBoat": 2,"SubMarine": 3}
+
+class Navy(Enum):
+    Player = "Player"
+    Opponent = "Opponent"
+
+NavyArray = ["Player","Opponent"]
+
+class Target(Enum):
+    Miss = "Miss"
+    Hit = "Hit"
+    Sunk = "Sunk"
+
+TargetArray = ["Miss","Hit","Sunk"]
