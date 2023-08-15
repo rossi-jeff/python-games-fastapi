@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from database import get_db
 from models.sea_battle import SeaBattle
 from sqlalchemy.orm import Session, joinedload
-from payloads.sea_battle_payload import SeaBattleCreate, SeaBattleShipPayload, SeaBattleFire
+from payloads.sea_battle_payload import SeaBattleCreate, SeaBattleShipPayload, SeaBattleFire, SeaBattlePoint
 from models.sea_battle_ship import SeaBattleShip
-from models.enums import ShipTypeArray, NavyArray, Navy
+from models.enums import ShipTypeArray, NavyArray, Navy, Target, ShipType, TargetArray
 from models.sea_battle_ship_grid_point import SeaBattleShipGridPoint
-from utilities.sea_battle import OpponentShipPoints
+from utilities.sea_battle import OpponentShipPoints, OpponentFirePoint
+from models.sea_battle_ship_hit import SeabattleShipHit
+from models.sea_battle_turn import SeaBattleTurn
 
 router = APIRouter(
     prefix="/api/sea_battle",
@@ -87,4 +89,43 @@ async def sea_battle_fire(sea_battle_id: int, body: SeaBattleFire, db: Session =
     sea_battle = db.query(SeaBattle).where(SeaBattle.id == sea_battle_id).first()
     if sea_battle is None:
         raise HTTPException(status_code=404, detail="Sea Battle not found")
-    return { "message": "TODO" }
+    point: SeaBattlePoint | None = None
+    if body.Navy == Navy.Player:
+        point = SeaBattlePoint(
+            Horizontal = body.Horizontal,
+            Vertical = body.Vertical
+        )
+    else:
+        point = OpponentFirePoint(db,sea_battle_id,sea_battle.Axis)
+    target: Target = Target.Miss
+    shipType: int | None = None
+    ships = db.query(SeaBattleShip).where(
+        SeaBattleShip.sea_battle_id == sea_battle_id and SeaBattleShip.Navy != NavyArray.index(body.Navy.name)
+    ).all()
+    for ship in ships:
+        for p in ship.points:
+            if point.Horizontal == p.Horizontal and point.Vertical == p.Vertical:
+                if len(ship.hits) + 1 >= len(ship.points):
+                    target = Target.Sunk
+                else:
+                    target = Target.Hit
+                shipType = ship.Type
+                hit = SeabattleShipHit(
+                    sea_battle_ship_id = ship.id,
+                    Horizontal = point.Horizontal,
+                    Vertical = point.Vertical
+                )
+                db.add(hit)
+                db.commit()
+    turn = SeaBattleTurn(
+        sea_battle_id = sea_battle_id,
+        Navy = NavyArray.index(body.Navy.name),
+        Target = TargetArray.index(target.name),
+        ShipType = shipType,
+        Horizontal = point.Horizontal,
+        Vertical = point.Vertical
+    )
+    db.add(turn)
+    db.commit()
+    db.refresh(turn)
+    return turn.as_dict()

@@ -2,6 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from payloads.sea_battle_payload import SeaBattlePoint
 from models.sea_battle_ship import SeaBattleShip
+from models.sea_battle_turn import SeaBattleTurn
 import random
 
 MaxAxisH = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
@@ -15,6 +16,24 @@ def EmptyGrid(axis: int):
         for idxV in range(axis):
             grid[MaxAxisH[idxH]][MaxAxisV[idxV]] = False
     return grid
+
+def OpponentFirePoint(db: Session, id: int, axis: int):
+    point: SeaBattlePoint | None = None
+    grid = EmptyGrid(axis)
+    turns = db.query(SeaBattleTurn).where(SeaBattleTurn.sea_battle_id == id and SeaBattleTurn.Navy == 1).all()
+    for turn in turns:
+        grid[turn.Horizontal][turn.Vertical] = True
+    found = False
+    while not found:
+        idxH = random.randint(0,axis-1)
+        idxV = random.randint(0,axis-1)
+        if not grid[MaxAxisH[idxH]][MaxAxisV[idxV]]:
+            point = SeaBattlePoint(
+                Horizontal = MaxAxisH[idxH],
+                Vertical = MaxAxisV[idxV]
+            )
+            found = True
+    return point
 
 def OpponentShipPoints(db: Session, id: int, axis: int, size: int):
     points: List[SeaBattlePoint] = []
