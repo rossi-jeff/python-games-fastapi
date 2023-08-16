@@ -11,3 +11,8 @@ class TenGrandOptions(BaseModel):
 class TenGrandScoreOption(BaseModel):
     Score: int
     Category: TenGrandCategory
+
+class TenGrandScorePayload(BaseModel):
+    TurnId: int
+    Dice: List[int]
+    Options: List[TenGrandScoreOption]
