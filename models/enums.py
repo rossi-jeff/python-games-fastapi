@@ -62,3 +62,36 @@ class Target(Enum):
     Sunk = "Sunk"
 
 TargetArray = ["Miss","Hit","Sunk"]
+
+class TenGrandCategory(Enum):
+    CrapOut = "CrapOut"
+    Ones = "Ones"
+    Fives = "Fives"
+    ThreePairs = "ThreePairs"
+    Straight = "Straight"
+    FullHouse = "FullHouse"
+    DoubleThreeKind = "DoubleThreeKind"
+    ThreeKind = "ThreeKind"
+    FourKind = "FourKind"
+    FiveKind = "FiveKind"
+    SixKind = "SixKind"
+
+TenGrandCategoryArray = [
+    "CrapOut", "Ones", "Fives", "ThreePairs", "Straight", 
+    "FullHouse", "DoubleThreeKind", "ThreeKind", "FourKind", 
+    "FiveKind", "SixKind"
+]
+
+TenGrandDiceRequired = {
+    "CrapOut": 0, 
+    "Ones": 1, 
+    "Fives": 1, 
+    "ThreePairs": 6, 
+    "Straight": 8, 
+    "FullHouse": 5, 
+    "DoubleThreeKind": 6, 
+    "ThreeKind": 3, 
+    "FourKind": 4, 
+    "FiveKind": 5, 
+    "SixKind": 6
+}
