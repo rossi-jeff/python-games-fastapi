@@ -95,3 +95,19 @@ TenGrandDiceRequired = {
     "FiveKind": 5, 
     "SixKind": 6
 }
+
+class YachtCategory(Enum):
+    BigStraight = "BigStraight"
+    Choice = "Choice"
+    Fives = "Fives"
+    FourOfKind = "FourOfKind"
+    Fours = "Fours"
+    FullHouse = "FullHouse"
+    LittleStraight = "LittleStraight"
+    Ones = "Ones"
+    Sixes = "Sixes"
+    Threes = "Threes"
+    Twos = "Twos"
+    Yacht = "Yacht"
+
+YachtCategoryArray = ["BigStraight", "Choice", "Fives", "FourOfKind", "Fours", "FullHouse", "LittleStraight", "Ones", "Sixes", "Threes", "Twos", "Yacht"]
