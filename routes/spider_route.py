@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session, joinedload
 from models.enums import GameStatusArray
 from payloads.spider_payload import SpiderCreate, SpiderUpdate
 from models.spider import Spider
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/spider",
@@ -31,13 +33,15 @@ async def get_spider_by_id(spider_id: int, db: Session = Depends(get_db)):
     return spider.as_dict()
 
 @router.post("/")
-async def create_spider(body: SpiderCreate, db: Session = Depends(get_db)):
+async def create_spider(body: SpiderCreate, db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     spider = Spider(
         Suits = body.Suits.value,
         Elapsed = 0,
         Moves = 0,
         Status = 1
     )
+    if user_id is not None:
+        spider.user_id = user_id
     db.add(spider)
     db.commit()
     db.refresh(spider)

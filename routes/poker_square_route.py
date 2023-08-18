@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session, joinedload
 from models.enums import GameStatusArray
 from payloads.poker_square_payload import PokerSquareUpdate
 from models.poker_square import PokerSquare
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/poker_square",
@@ -31,11 +33,13 @@ async def get_poker_square_by_id(poker_square_id: int, db: Session = Depends(get
     return poker_square
 
 @router.post("/")
-async def create_poker_square(db: Session = Depends(get_db)):
+async def create_poker_square(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     poker_square = PokerSquare(
         Score = 0,
         Status = 1
     )
+    if user_id is not None:
+        poker_square.user_id = user_id
     db.add(poker_square)
     db.commit()
     db.refresh(poker_square)

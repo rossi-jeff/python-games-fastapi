@@ -4,6 +4,8 @@ from models.concentration import Concentration
 from sqlalchemy.orm import Session, joinedload
 from models.enums import GameStatusArray
 from payloads.concentration_payload import ConcentrationUpdate
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/concentration",
@@ -32,13 +34,15 @@ async def get_concentration_by_id(concentration_id: int, db: Session = Depends(g
     return concentration.as_dict()
 
 @router.post("/")
-async def create_concentration(db: Session = Depends(get_db)):
+async def create_concentration(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     concentration = Concentration(
         Status = 1,
         Elapsed = 0,
         Moves = 0,
         Matched = 0
     )
+    if user_id is not None:
+        concentration.user_id = user_id
     db.add(concentration)
     db.commit()
     db.refresh(concentration)
