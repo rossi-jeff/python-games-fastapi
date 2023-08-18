@@ -6,6 +6,7 @@ from models.enums import GameStatusArray
 from payloads.concentration_payload import ConcentrationUpdate
 from optional_auth import get_current_user
 from typing import Optional
+from responses.concentration_response import ConcentrationResponse, ConcentrationPaginatedResponse
 
 router = APIRouter(
     prefix="/api/concentration",
@@ -14,7 +15,11 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def concentrations_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def concentrations_paginated(
+            Limit: int = 10, 
+            Offset: int = 0, 
+            db: Session = Depends(get_db)
+        ) -> ConcentrationPaginatedResponse:
     count = db.query(Concentration).where(Concentration.Status != 1).count()
     concentrations = db.query(Concentration).where(Concentration.Status != 1).order_by(
         Concentration.Status.desc(),
@@ -27,14 +32,18 @@ async def concentrations_paginated(Limit: int = 10, Offset: int = 0, db: Session
 
 
 @router.get("/{concentration_id}")
-async def get_concentration_by_id(concentration_id: int, db: Session = Depends(get_db)):
+async def get_concentration_by_id(
+            concentration_id: int, db: Session = Depends(get_db)
+        ) -> ConcentrationResponse:
     concentration = db.query(Concentration).where(Concentration.id == concentration_id).options(joinedload(Concentration.user)).first()
     if concentration is None:
         raise HTTPException(status_code=404, detail="Concentration not found")
     return concentration.as_dict()
 
-@router.post("/")
-async def create_concentration(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+@router.post("/", status_code=201)
+async def create_concentration(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+        ) -> ConcentrationResponse:
     concentration = Concentration(
         Status = 1,
         Elapsed = 0,
@@ -49,7 +58,9 @@ async def create_concentration(db: Session = Depends(get_db), user_id: Optional[
     return concentration.as_dict()
 
 @router.patch("/{concentration_id}")
-async def update_concentration(concentration_id: int, body: ConcentrationUpdate, db: Session = Depends(get_db)):
+async def update_concentration(
+            concentration_id: int, body: ConcentrationUpdate, db: Session = Depends(get_db)
+        ) -> ConcentrationResponse:
     concentration = db.query(Concentration).where(Concentration.id == concentration_id).options(joinedload(Concentration.user)).first()
     if concentration is None:
         raise HTTPException(status_code=404, detail="Concentration not found")

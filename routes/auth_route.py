@@ -22,7 +22,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.post("/register")
+@router.post("/register", status_code=201)
 async def register(body: AuthCredentials, db: Session = Depends(get_db)) -> UserResponse:
     user_db = UserDB(
         UserName = body.UserName,
