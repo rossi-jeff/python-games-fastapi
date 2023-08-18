@@ -11,14 +11,10 @@ config = dotenv_values(".env")
 async def get_current_user(auth: Optional[HTTPAuthorizationCredentials] = Depends(optional_bearer)):
     if auth is None:
         return None
-    decoded = jwt.decode(auth.credentials, config["SECRET"], algorithms=["HS256"])
-    if decoded["sub"]:
-        return decoded["sub"]
+    try:
+        decoded = jwt.decode(auth.credentials, config["SECRET"], algorithms=["HS256"])
+        if decoded["sub"]:
+            return decoded["sub"]
+    except:
+        return None
     return None
-
-"""
-{
-  "UserName": "PythonUser",
-  "Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjksImV4cCI6MjI5NzE4NjE3OS41MTQyOTl9.L4_ongIiJfPtBOhMPju4rP6vd7B0TQLuihVPOrfLV-Y"
-}
-"""

@@ -9,6 +9,8 @@ from utilities.ten_grand import TenGrandScoreOptions, TGCategoryScoreAndDice, Re
 from models.ten_grand_turn import TenGrandTurn
 from models.ten_grand_score import TenGrandScore
 from models.enums import TenGrandDiceRequired, TenGrandCategoryArray
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/ten_grand",
@@ -28,6 +30,15 @@ async def ten_grands_paginated(Limit: int = 10, Offset: int = 0, db: Session = D
         items.append(tg.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
+@router.get("/progress")
+async def ten_grands_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+    items = []
+    if user_id is not None:
+        ten_grands = db.query(TenGrand).where(TenGrand.Status == 1).filter(TenGrand.user_id == user_id).all()
+        for tg in ten_grands:
+            items.append(tg.as_dict())
+    return items
+
 @router.get("/{ten_grand_id}")
 async def get_ten_grand_by_id(ten_grand_id: int, db: Session = Depends(get_db)):
     ten_grand = db.query(TenGrand).where(TenGrand.id == ten_grand_id).first()
@@ -36,11 +47,13 @@ async def get_ten_grand_by_id(ten_grand_id: int, db: Session = Depends(get_db)):
     return ten_grand.as_dict(True)
 
 @router.post("/")
-async def create_ten_grand(db: Session = Depends(get_db)):
+async def create_ten_grand(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     ten_grand = TenGrand(
         Score = 0,
         Status = 1
     )
+    if user_id is not None:
+        ten_grand.user_id = user_id
     db.add(ten_grand)
     db.commit()
     db.refresh(ten_grand)
