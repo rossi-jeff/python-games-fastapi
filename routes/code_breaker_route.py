@@ -13,6 +13,9 @@ from utilities.code_breaker import CalculateGuessKeys, CalculateCodeBreakerStatu
 import random
 from optional_auth import get_current_user
 from typing import Optional
+from responses.code_breaker_response import CodeBreakerResponse, CodeBreakerPaginatedResponse
+from responses.code_breaker_guess_response import CodeBreakerGuessResponse
+from typing import List
 
 router = APIRouter(
     prefix="/api/code_breaker",
@@ -21,7 +24,7 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def code_breakers_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def code_breakers_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)) -> CodeBreakerPaginatedResponse:
     count = db.query(CodeBreaker).where(CodeBreaker.Status != 1).count()
     code_breakers = db.query(CodeBreaker).where(CodeBreaker.Status != 1).order_by(
         CodeBreaker.Status.desc(),
@@ -33,7 +36,10 @@ async def code_breakers_paginated(Limit: int = 10, Offset: int = 0, db: Session 
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/progress")
-async def code_breakers_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+async def code_breakers_in_progress(
+            db: Session = Depends(get_db), 
+            user_id: Optional[str] = Depends(get_current_user)
+        ) -> List[CodeBreakerResponse]:
     items = []
     if user_id is not None:
         code_breakers = db.query(CodeBreaker).where(CodeBreaker.Status == 1).filter(CodeBreaker.user_id == user_id).all()
@@ -42,15 +48,19 @@ async def code_breakers_in_progress(db: Session = Depends(get_db), user_id: Opti
     return items
 
 @router.get("/{code_breaker_id}")
-async def get_code_breaker_by_id(code_breaker_id: int, db: Session = Depends(get_db)):
+async def get_code_breaker_by_id(code_breaker_id: int, db: Session = Depends(get_db)) -> CodeBreakerResponse:
     code_breaker = db.query(CodeBreaker).where(CodeBreaker.id == code_breaker_id).first()
     if code_breaker is None:
         raise HTTPException(status_code=404, detail="Code Breaker not found")
     return code_breaker.as_dict(True)
 
 
-@router.post("/")
-async def create_code_breaker(body: CodeBreakerCreate, db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+@router.post("/", status_code=201)
+async def create_code_breaker(
+            body: CodeBreakerCreate, 
+            db: Session = Depends(get_db), 
+            user_id: Optional[str] = Depends(get_current_user)
+        ) -> CodeBreakerResponse:
     s = ","
     colors = []
     for c in body.Colors:
@@ -78,8 +88,12 @@ async def create_code_breaker(body: CodeBreakerCreate, db: Session = Depends(get
     db.refresh(code_breaker)
     return code_breaker.as_dict(True)
 
-@router.post("/{code_breaker_id}/guess")
-async def take_code_breaker_guess(code_breaker_id: int, body: CodeBreakerGuessPayload, db: Session = Depends(get_db)):
+@router.post("/{code_breaker_id}/guess", status_code=201)
+async def take_code_breaker_guess(
+            code_breaker_id: int, 
+            body: CodeBreakerGuessPayload, 
+            edb: Session = Depends(get_db)
+        ) -> CodeBreakerGuessResponse:
     code_breaker_guess = CodeBreakerGuess(
         code_breaker_id = code_breaker_id
     )
