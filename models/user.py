@@ -10,5 +10,7 @@ class User(Base):
     created_at: Mapped[str] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[str] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
     UserName: Mapped[str] = mapped_column(String(30))
-    password_digest: Mapped[str] = mapped_column(String(255))
     
+
+class UserDB(User):
+    password_digest: Mapped[str] = mapped_column(String(255))
