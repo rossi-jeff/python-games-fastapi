@@ -4,6 +4,8 @@ from models.free_cell import FreeCell
 from sqlalchemy.orm import Session, joinedload
 from payloads.free_cell_payload import FreeCellUpdate
 from models.enums import GameStatusArray
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/free_cell",
@@ -31,12 +33,14 @@ async def get_free_cell_by_id(free_cell_id: int, db: Session = Depends(get_db)):
     return free_cell.as_dict()
 
 @router.post("/")
-async def create_free_cell(db: Session = Depends(get_db)):
+async def create_free_cell(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     free_cell = FreeCell(
         Elapsed = 0,
         Moves = 0,
         Status = 1
     )
+    if user_id is not None:
+        free_cell.user_id = user_id
     db.add(free_cell)
     db.commit()
     db.refresh(free_cell)

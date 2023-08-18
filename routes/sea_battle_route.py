@@ -9,6 +9,8 @@ from models.sea_battle_ship_grid_point import SeaBattleShipGridPoint
 from utilities.sea_battle import OpponentShipPoints, OpponentFirePoint
 from models.sea_battle_ship_hit import SeabattleShipHit
 from models.sea_battle_turn import SeaBattleTurn
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/sea_battle",
@@ -28,6 +30,15 @@ async def sea_battles_paginated(Limit: int = 10, Offset: int = 0, db: Session = 
         items.append(sb.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
+@router.get("/progress")
+async def sea_battles_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+    items = []
+    if user_id is not None:
+        sea_battles = db.query(SeaBattle).where(SeaBattle.Status == 1).filter(SeaBattle.user_id == user_id).all()
+        for sb in sea_battles:
+            items.append(sb.as_dict())
+    return items
+
 @router.get("/{sea_battle_id}")
 async def get_sea_battle_by_id(sea_battle_id: int, db: Session = Depends(get_db)):
     sea_battle = db.query(SeaBattle).where(SeaBattle.id == sea_battle_id).first()
@@ -36,12 +47,14 @@ async def get_sea_battle_by_id(sea_battle_id: int, db: Session = Depends(get_db)
     return sea_battle.as_dict(True)
 
 @router.post("/")
-async def create_sea_battle(body: SeaBattleCreate, db: Session = Depends(get_db)):
+async def create_sea_battle(body: SeaBattleCreate, db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     sea_battle = SeaBattle(
         Axis = body.Axis,
         Status = 1,
         Score = 0
     )
+    if user_id is not None:
+        sea_battle.user_id = user_id
     db.add(sea_battle)
     db.commit()
     db.refresh(sea_battle)

@@ -8,6 +8,8 @@ from payloads.yacht_payload import YachtRoll, YachtScore
 from utilities.yacht import YachtSkipCategories, YachtScoreOptions, StringToIntList, YachtCategoryScore, UpdateYachtTotal
 from models.enums import YachtCategoryArray
 import random
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/yacht",
@@ -26,6 +28,15 @@ async def yachts_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depen
         items.append(y.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
+@router.get("/progress")
+async def yachts_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+    items = []
+    if user_id is not None:
+        yachts = db.query(Yacht).where(Yacht.NumTurns < 12).filter(Yacht.user_id == user_id).all()
+        for y in yachts:
+            items.append(y.as_dict())
+    return items
+
 @router.get("/{yacht_id}")
 async def get_yacht_by_id(yacht_id: int, db: Session = Depends(get_db)):
     yacht = db.query(Yacht).where(Yacht.id == yacht_id).first()
@@ -34,11 +45,13 @@ async def get_yacht_by_id(yacht_id: int, db: Session = Depends(get_db)):
     return yacht.as_dict(True)
 
 @router.post("/")
-async def create_yacht(db: Session = Depends(get_db)):
+async def create_yacht(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     yacht = Yacht(
         Total = 0,
         NumTurns = 0
 		)
+    if user_id is not None:
+        yacht.user_id = user_id
     db.add(yacht)
     db.commit()
     db.refresh(yacht)

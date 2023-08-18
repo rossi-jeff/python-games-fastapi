@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session, joinedload
 from models.enums import GameStatusArray
 from payloads.klondike_payload import KlondikeUpdate
 from models.klondike import Klondike
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/klondike",
@@ -31,12 +33,14 @@ async def get_klondike_by_id(klondike_id: int, db: Session = Depends(get_db)):
     return klondike.as_dict()
 
 @router.post("/")
-async def create_klondike(db: Session = Depends(get_db)):
+async def create_klondike(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     klondike = Klondike(
         Elapsed = 0,
         Moves = 0,
         Status = 1
     )
+    if user_id is not None:
+        klondike.user_id = user_id
     db.add(klondike)
     db.commit()
     db.refresh(klondike)
