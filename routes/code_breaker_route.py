@@ -11,6 +11,8 @@ from models.code_breaker_guess_color import CodeBreakerGuessColor
 from models.code_breaker_guess_keys import CodeBreakerGuessKey
 from utilities.code_breaker import CalculateGuessKeys, CalculateCodeBreakerStatus, CalculateCodeBreakerScore
 import random
+from optional_auth import get_current_user
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/code_breaker",
@@ -30,6 +32,15 @@ async def code_breakers_paginated(Limit: int = 10, Offset: int = 0, db: Session 
         items.append(cb.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
+@router.get("/progress")
+async def code_breakers_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+    items = []
+    if user_id is not None:
+        code_breakers = db.query(CodeBreaker).where(CodeBreaker.Status == 1).filter(CodeBreaker.user_id == user_id).all()
+        for cb in code_breakers:
+            items.append(cb.as_dict())
+    return items
+
 @router.get("/{code_breaker_id}")
 async def get_code_breaker_by_id(code_breaker_id: int, db: Session = Depends(get_db)):
     code_breaker = db.query(CodeBreaker).where(CodeBreaker.id == code_breaker_id).first()
@@ -37,8 +48,9 @@ async def get_code_breaker_by_id(code_breaker_id: int, db: Session = Depends(get
         raise HTTPException(status_code=404, detail="Code Breaker not found")
     return code_breaker.as_dict(True)
 
+
 @router.post("/")
-async def create_code_breaker(body: CodeBreakerCreate, db: Session = Depends(get_db)):
+async def create_code_breaker(body: CodeBreakerCreate, db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
     s = ","
     colors = []
     for c in body.Colors:
@@ -50,6 +62,8 @@ async def create_code_breaker(body: CodeBreakerCreate, db: Session = Depends(get
         Colors = len(colors),
         Score = 0
     )
+    if user_id is not None:
+        code_breaker.user_id = user_id
     db.add(code_breaker)
     db.commit()
     db.refresh(code_breaker)

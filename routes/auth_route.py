@@ -41,7 +41,6 @@ async def login(body: AuthCredentials, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Unauthorized")
     payload = {
         "sub": user.id,
-        "iat": datetime.utcnow().timestamp(),
         "exp": datetime.utcnow().timestamp() + WEEK
     }
     token = jwt.encode(payload, config["SECRET"], algorithm="HS256")
