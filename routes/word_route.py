@@ -4,6 +4,7 @@ from database import get_db
 from models.word import Word
 from sqlalchemy.sql.expression import func
 from sqlalchemy.orm import Session
+from responses.word_response import WordResponse
 
 router = APIRouter(
     prefix="/api/word",
@@ -12,7 +13,9 @@ router = APIRouter(
 )
 
 @router.post("/random")
-async def get_random_word(body: RandomWordPayload, db: Session = Depends(get_db)):
+async def get_random_word(
+            body: RandomWordPayload, db: Session = Depends(get_db)
+        ) -> WordResponse:
     if body.Length > 0:
         word = db.query(Word).where(Word.Length == body.Length).order_by(func.rand()).limit(1).first()
     elif body.Max > 0 and body.Min > 0 : 
@@ -23,7 +26,7 @@ async def get_random_word(body: RandomWordPayload, db: Session = Depends(get_db)
     return word
 
 @router.get("/{word_id}")
-async def get_word_by_id(word_id: int, db: Session = Depends(get_db)):
+async def get_word_by_id(word_id: int, db: Session = Depends(get_db)) -> WordResponse:
     word = db.query(Word).get(word_id)
     if word is None:
          raise HTTPException(status_code=404, detail="Word not found")
