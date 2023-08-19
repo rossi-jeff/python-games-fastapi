@@ -1,12 +1,13 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Any
 from .ten_grand_score_response import TenGrandScoreResponse
+
 
 class TenGrandTurnResponse(BaseModel):
     id: int
-    created_at: str
-    updated_at: str
+    created_at: Any
+    updated_at: Any
     Score: int
-    ten_grand_turn_id: int
+    ten_grand_id: int
 
-    scores: List[TenGrandScoreResponse]
+    scores: List[TenGrandScoreResponse] = []

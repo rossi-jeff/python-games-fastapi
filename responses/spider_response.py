@@ -1,19 +1,21 @@
 from pydantic import BaseModel
 from models.enums import GameStatus, SuitsEnum
 from .user_response import UserResponse
-from typing import List
+from typing import List, Any
+
 
 class SpiderResponse(BaseModel):
     id: int
-    created_at: str
-    updated_at: str
+    created_at: Any
+    updated_at: Any
     Suits: SuitsEnum
     Moves: int
     Elapsed: int
     Status: GameStatus
-    user_id: int
+    user_id: int | None
 
-    user: UserResponse
+    user: UserResponse | None
+
 
 class SpiderPaginatedResponse(BaseModel):
     Count: int

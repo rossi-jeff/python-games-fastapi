@@ -4,8 +4,22 @@ from routes import (
     poker_square_route, spider_route, code_breaker_route, guess_word_route,
     auth_route, hang_man_route, sea_battle_route, ten_grand_route, yacht_route
 )
+from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+    "http://localhost:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET","POST","PATCH","PUT","DELETE","OPTIONS"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_route.router)
 app.include_router(code_breaker_route.router)

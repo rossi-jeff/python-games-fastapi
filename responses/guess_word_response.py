@@ -3,20 +3,20 @@ from models.enums import GameStatus
 from .user_response import UserResponse
 from .word_response import WordResponse
 from .guess_word_guess_response import GuessWordGuessResponse
-from typing import List
+from typing import List, Any
 
 class GuessWordResponse(BaseModel):
     id: int
-    created_at: str
-    updated_at: str
+    created_at: Any
+    updated_at: Any
     Score: int
     Status: GameStatus
-    user_id: int
-    word_id: int
+    user_id: int | None
+    word_id: int | None
 
-    user: UserResponse
-    word: WordResponse
-    guesses: List[GuessWordGuessResponse]
+    user: UserResponse | None
+    word: WordResponse | None
+    guesses: List[GuessWordGuessResponse] = []
 
 class GuessWordPaginatedResponse(BaseModel):
     Count: int
