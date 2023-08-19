@@ -7,6 +7,8 @@ import bcrypt
 import jwt
 from dotenv import dotenv_values
 from datetime import datetime, timedelta
+from responses.user_response import UserResponse
+from responses.login_response import LoginResponse
 
 # jwt.decode(encoded_jwt, "secret", algorithms=["HS256"])
 
@@ -20,8 +22,8 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.post("/register")
-async def register(body: AuthCredentials, db: Session = Depends(get_db)):
+@router.post("/register", status_code=201)
+async def register(body: AuthCredentials, db: Session = Depends(get_db)) -> UserResponse:
     user_db = UserDB(
         UserName = body.UserName,
         password_digest = bcrypt.hashpw(body.password.encode('utf8'), bcrypt.gensalt())
@@ -33,7 +35,7 @@ async def register(body: AuthCredentials, db: Session = Depends(get_db)):
     return user
 
 @router.post("/login")
-async def login(body: AuthCredentials, db: Session = Depends(get_db)):
+async def login(body: AuthCredentials, db: Session = Depends(get_db)) -> LoginResponse:
     user = db.query(UserDB).where(UserDB.UserName == body.UserName).first()
     if user is None:
         raise HTTPException(status_code=401, detail="Unauthorized")

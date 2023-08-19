@@ -6,6 +6,7 @@ from payloads.poker_square_payload import PokerSquareUpdate
 from models.poker_square import PokerSquare
 from optional_auth import get_current_user
 from typing import Optional
+from responses.poker_square_response import PokerSquareResponse, PokerSquarePaginatedResponse
 
 router = APIRouter(
     prefix="/api/poker_square",
@@ -14,7 +15,9 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def poker_squares_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def poker_squares_paginated(
+            Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
+        ) -> PokerSquarePaginatedResponse:
     count = db.query(PokerSquare).where(PokerSquare.Status != 1).count()
     poker_squares = db.query(PokerSquare).where(PokerSquare.Status != 1).order_by(
         PokerSquare.Status.desc(),
@@ -26,14 +29,18 @@ async def poker_squares_paginated(Limit: int = 10, Offset: int = 0, db: Session 
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{poker_square_id}")
-async def get_poker_square_by_id(poker_square_id: int, db: Session = Depends(get_db)):
+async def get_poker_square_by_id(
+            poker_square_id: int, db: Session = Depends(get_db)
+        ) -> PokerSquareResponse:
     poker_square = db.query(PokerSquare).where(PokerSquare.id == poker_square_id).options(joinedload(PokerSquare.user)).first()
     if poker_square is None:
         raise HTTPException(status_code=404, detail="Poker Square not found")
     return poker_square
 
-@router.post("/")
-async def create_poker_square(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+@router.post("/", status_code=201)
+async def create_poker_square(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+        ) -> PokerSquareResponse:
     poker_square = PokerSquare(
         Score = 0,
         Status = 1
@@ -46,7 +53,9 @@ async def create_poker_square(db: Session = Depends(get_db), user_id: Optional[s
     return poker_square.as_dict()
 
 @router.patch("/{poker_square_id}")
-async def update_poker_square(poker_square_id: int, body: PokerSquareUpdate, db: Session = Depends(get_db)):
+async def update_poker_square(
+            poker_square_id: int, body: PokerSquareUpdate, db: Session = Depends(get_db)
+        ) -> PokerSquareResponse:
     poker_square = db.query(PokerSquare).where(PokerSquare.id == poker_square_id).options(joinedload(PokerSquare.user)).first()
     if poker_square is None:
         raise HTTPException(status_code=404, detail="Poker Square not found")
