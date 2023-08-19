@@ -11,6 +11,9 @@ from models.sea_battle_ship_hit import SeabattleShipHit
 from models.sea_battle_turn import SeaBattleTurn
 from optional_auth import get_current_user
 from typing import Optional
+from responses.sea_battle_response import SeaBattleResponse, SeaBattlePaginatedResponse
+from responses.sea_battle_ship_response import SeaBattleShipResponse
+from responses.sea_battle_turn_response import SeaBattleTurnResponse
 
 router = APIRouter(
     prefix="/api/sea_battle",
@@ -19,7 +22,9 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def sea_battles_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def sea_battles_paginated(
+            Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
+        ) -> SeaBattlePaginatedResponse:
     count = db.query(SeaBattle).where(SeaBattle.Status != 1).count()
     sea_battles = db.query(SeaBattle).where(SeaBattle.Status != 1).order_by(
         SeaBattle.Status.desc(),
@@ -31,7 +36,9 @@ async def sea_battles_paginated(Limit: int = 10, Offset: int = 0, db: Session = 
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/progress")
-async def sea_battles_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+async def sea_battles_in_progress(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+        ) -> SeaBattleResponse:
     items = []
     if user_id is not None:
         sea_battles = db.query(SeaBattle).where(SeaBattle.Status == 1).filter(SeaBattle.user_id == user_id).all()
@@ -40,14 +47,20 @@ async def sea_battles_in_progress(db: Session = Depends(get_db), user_id: Option
     return items
 
 @router.get("/{sea_battle_id}")
-async def get_sea_battle_by_id(sea_battle_id: int, db: Session = Depends(get_db)):
+async def get_sea_battle_by_id(
+            sea_battle_id: int, db: Session = Depends(get_db)
+        ) -> SeaBattleResponse:
     sea_battle = db.query(SeaBattle).where(SeaBattle.id == sea_battle_id).first()
     if sea_battle is None:
         raise HTTPException(status_code=404, detail="Sea Battle not found")
     return sea_battle.as_dict(True)
 
-@router.post("/")
-async def create_sea_battle(body: SeaBattleCreate, db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+@router.post("/", status_code=201)
+async def create_sea_battle(
+            body: SeaBattleCreate, 
+            db: Session = Depends(get_db), 
+            user_id: Optional[str] = Depends(get_current_user)
+        ) -> SeaBattleResponse:
     sea_battle = SeaBattle(
         Axis = body.Axis,
         Status = 1,
@@ -60,8 +73,10 @@ async def create_sea_battle(body: SeaBattleCreate, db: Session = Depends(get_db)
     db.refresh(sea_battle)
     return sea_battle.as_dict()
 
-@router.post("/{sea_battle_id}/ship")
-async def sea_battle_create_ship(sea_battle_id: int, body: SeaBattleShipPayload, db: Session = Depends(get_db)):
+@router.post("/{sea_battle_id}/ship", status_code=201)
+async def sea_battle_create_ship(
+            sea_battle_id: int, body: SeaBattleShipPayload, db: Session = Depends(get_db)
+        ) -> SeaBattleShipResponse:
     sea_battle = db.query(SeaBattle).where(SeaBattle.id == sea_battle_id).first()
     if sea_battle is None:
         raise HTTPException(status_code=404, detail="Sea Battle not found")
@@ -97,8 +112,10 @@ async def sea_battle_create_ship(sea_battle_id: int, body: SeaBattleShipPayload,
     db.refresh(sea_battle_ship)
     return sea_battle_ship.as_dict()
 
-@router.post("/{sea_battle_id}/fire")
-async def sea_battle_fire(sea_battle_id: int, body: SeaBattleFire, db: Session = Depends(get_db)):
+@router.post("/{sea_battle_id}/fire", status_code=201)
+async def sea_battle_fire(
+            sea_battle_id: int, body: SeaBattleFire, db: Session = Depends(get_db)
+        ) -> SeaBattleTurnResponse:
     sea_battle = db.query(SeaBattle).where(SeaBattle.id == sea_battle_id).first()
     if sea_battle is None:
         raise HTTPException(status_code=404, detail="Sea Battle not found")
