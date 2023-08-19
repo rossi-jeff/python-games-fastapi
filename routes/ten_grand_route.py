@@ -10,7 +10,9 @@ from models.ten_grand_turn import TenGrandTurn
 from models.ten_grand_score import TenGrandScore
 from models.enums import TenGrandDiceRequired, TenGrandCategoryArray
 from optional_auth import get_current_user
-from typing import Optional
+from typing import Optional, List
+from responses.ten_grand_response import TenGrandResponse, TenGrandPaginatedResponse, TenGrandOptionsResponse
+from responses.ten_grand_turn_response import TenGrandTurnResponse
 
 router = APIRouter(
     prefix="/api/ten_grand",
@@ -19,7 +21,9 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def ten_grands_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def ten_grands_paginated(
+            Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
+        ) -> TenGrandPaginatedResponse:
     count = db.query(TenGrand).where(TenGrand.Status != 1).count()
     ten_grands = db.query(TenGrand).where(TenGrand.Status != 1).order_by(
         TenGrand.Status.desc(),
@@ -31,7 +35,9 @@ async def ten_grands_paginated(Limit: int = 10, Offset: int = 0, db: Session = D
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/progress")
-async def ten_grands_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+async def ten_grands_in_progress(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+        ) -> List[TenGrandResponse]:
     items = []
     if user_id is not None:
         ten_grands = db.query(TenGrand).where(TenGrand.Status == 1).filter(TenGrand.user_id == user_id).all()
@@ -40,14 +46,18 @@ async def ten_grands_in_progress(db: Session = Depends(get_db), user_id: Optiona
     return items
 
 @router.get("/{ten_grand_id}")
-async def get_ten_grand_by_id(ten_grand_id: int, db: Session = Depends(get_db)):
+async def get_ten_grand_by_id(
+            ten_grand_id: int, db: Session = Depends(get_db)
+        ) -> TenGrandResponse:
     ten_grand = db.query(TenGrand).where(TenGrand.id == ten_grand_id).first()
     if ten_grand is None:
         raise HTTPException(status_code=404, detail="Ten Grand not found")
     return ten_grand.as_dict(True)
 
-@router.post("/")
-async def create_ten_grand(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+@router.post("/", status_code=201)
+async def create_ten_grand(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+        ) -> TenGrandResponse:
     ten_grand = TenGrand(
         Score = 0,
         Status = 1
@@ -60,18 +70,20 @@ async def create_ten_grand(db: Session = Depends(get_db), user_id: Optional[str]
     return ten_grand.as_dict()
 
 @router.post("/{ten_grand_id}/roll")
-async def ten_grand_roll(ten_grand_id: int, body: TenGrandRoll):
+async def ten_grand_roll(ten_grand_id: int, body: TenGrandRoll) -> List[int]:
     dice = []
     for idx in range(body.Quantity):
         dice.append(random.randint(1,6))
     return dice
 
 @router.post("/options")
-async def ten_grand_score_options(body: TenGrandOptions):
+async def ten_grand_score_options(body: TenGrandOptions) -> TenGrandOptionsResponse:
     return { "Dice": body.Dice, "Options": TenGrandScoreOptions(body.Dice) }
 
-@router.post("/{ten_grand_id}/score")
-async def ten_grand_score(ten_grand_id: int, body: TenGrandScorePayload, db: Session = Depends(get_db)):
+@router.post("/{ten_grand_id}/score", status_code=201)
+async def ten_grand_score(
+            ten_grand_id: int, body: TenGrandScorePayload, db: Session = Depends(get_db)
+        ) -> TenGrandTurnResponse:
     ten_grand = db.query(TenGrand).where(TenGrand.id == ten_grand_id).first()
     if ten_grand is None:
         raise HTTPException(status_code=404, detail="Ten Grand not found")
