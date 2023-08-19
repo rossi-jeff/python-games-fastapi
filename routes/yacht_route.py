@@ -9,7 +9,9 @@ from utilities.yacht import YachtSkipCategories, YachtScoreOptions, StringToIntL
 from models.enums import YachtCategoryArray
 import random
 from optional_auth import get_current_user
-from typing import Optional
+from typing import Optional, List
+from responses.yacht_response import YachtResponse, YachtPaginatedResponse, YachtRollResponse
+from responses.yacht_turn_response import YachtTurnResponse
 
 router = APIRouter(
     prefix="/api/yacht",
@@ -18,18 +20,22 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def yachts_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def yachts_paginated(
+            Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
+          ) -> YachtPaginatedResponse:
     count = db.query(Yacht).where(Yacht.NumTurns == 12).count()
     yachts = db.query(Yacht).where(Yacht.NumTurns == 12).order_by(
         Yacht.Total.desc()
-		).limit(Limit).offset(Offset).all()
+    ).limit(Limit).offset(Offset).all()
     items = []
     for y in yachts:
         items.append(y.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/progress")
-async def yachts_in_progress(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+async def yachts_in_progress(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+          ) -> List[YachtResponse]:
     items = []
     if user_id is not None:
         yachts = db.query(Yacht).where(Yacht.NumTurns < 12).filter(Yacht.user_id == user_id).all()
@@ -38,18 +44,22 @@ async def yachts_in_progress(db: Session = Depends(get_db), user_id: Optional[st
     return items
 
 @router.get("/{yacht_id}")
-async def get_yacht_by_id(yacht_id: int, db: Session = Depends(get_db)):
+async def get_yacht_by_id(
+            yacht_id: int, db: Session = Depends(get_db)
+          ) -> YachtResponse:
     yacht = db.query(Yacht).where(Yacht.id == yacht_id).first()
     if yacht is None:
         raise HTTPException(status_code=404, detail="Yacht not found")
     return yacht.as_dict(True)
 
 @router.post("/")
-async def create_yacht(db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+async def create_yacht(
+            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+          ) -> YachtResponse:
     yacht = Yacht(
         Total = 0,
         NumTurns = 0
-		)
+    )
     if user_id is not None:
         yacht.user_id = user_id
     db.add(yacht)
@@ -58,7 +68,9 @@ async def create_yacht(db: Session = Depends(get_db), user_id: Optional[str] = D
     return yacht.as_dict()
 
 @router.post("/{yacht_id}/roll")
-async def yacht_roll(yacht_id: int, body: YachtRoll, db: Session = Depends(get_db)):
+async def yacht_roll(
+            yacht_id: int, body: YachtRoll, db: Session = Depends(get_db)
+          ) -> YachtRollResponse:
     dice: list[int] = []
     for k in body.Keep:
         dice.append(k)
@@ -86,7 +98,9 @@ async def yacht_roll(yacht_id: int, body: YachtRoll, db: Session = Depends(get_d
     return { "Turn": turn.as_dict(), "Options": options }
 
 @router.post("/{yacht_id}/score")
-def yacht_score_turn(yacht_id: int, body: YachtScore, db: Session = Depends(get_db)):
+def yacht_score_turn(
+      yacht_id: int, body: YachtScore, db: Session = Depends(get_db)
+    ) -> YachtTurnResponse:
     turn = db.query(YachtTurn).where(YachtTurn.id == body.TurnId).first()
     if turn is None:
         raise HTTPException(status_code=404, detail="Yacht Turn not found")
