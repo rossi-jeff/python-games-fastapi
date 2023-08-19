@@ -6,6 +6,7 @@ from payloads.spider_payload import SpiderCreate, SpiderUpdate
 from models.spider import Spider
 from optional_auth import get_current_user
 from typing import Optional
+from responses.spider_response import SpiderResponse, SpiderPaginatedResponse
 
 router = APIRouter(
     prefix="/api/spider",
@@ -14,7 +15,9 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def spiders_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)):
+async def spiders_paginated(
+            Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
+        ) -> SpiderPaginatedResponse:
     count = db.query(Spider).where(Spider.Status != 1).count()
     spiders = db.query(Spider).where(Spider.Status != 1).order_by(
         Spider.Status.desc(),
@@ -26,14 +29,20 @@ async def spiders_paginated(Limit: int = 10, Offset: int = 0, db: Session = Depe
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
 @router.get("/{spider_id}")
-async def get_spider_by_id(spider_id: int, db: Session = Depends(get_db)):
+async def get_spider_by_id(
+            spider_id: int, db: Session = Depends(get_db)
+        ) -> SpiderResponse:
     spider = db.query(Spider).where(Spider.id == spider_id).options(joinedload(Spider.user)).first()
     if spider is None:
         raise HTTPException(status_code=404, detail="Spider not found")
     return spider.as_dict()
 
-@router.post("/")
-async def create_spider(body: SpiderCreate, db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)):
+@router.post("/", status_code=201)
+async def create_spider(
+            body: SpiderCreate, 
+            db: Session = Depends(get_db), 
+            user_id: Optional[str] = Depends(get_current_user)
+        ) -> SpiderResponse:
     spider = Spider(
         Suits = body.Suits.value,
         Elapsed = 0,
@@ -48,7 +57,9 @@ async def create_spider(body: SpiderCreate, db: Session = Depends(get_db), user_
     return spider.as_dict()
 
 @router.patch("/{spider_id}")
-async def update_spider(spider_id: int, body: SpiderUpdate, db: Session = Depends(get_db)):
+async def update_spider(
+            spider_id: int, body: SpiderUpdate, db: Session = Depends(get_db)
+        ) -> SpiderResponse:
     spider = db.query(Spider).where(Spider.id == spider_id).options(joinedload(Spider.user)).first()
     if spider is None:
         raise HTTPException(status_code=404, detail="Spider not found")

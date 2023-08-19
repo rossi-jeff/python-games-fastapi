@@ -10,7 +10,7 @@ from utilities.sea_battle import OpponentShipPoints, OpponentFirePoint
 from models.sea_battle_ship_hit import SeabattleShipHit
 from models.sea_battle_turn import SeaBattleTurn
 from optional_auth import get_current_user
-from typing import Optional
+from typing import Optional, List
 from responses.sea_battle_response import SeaBattleResponse, SeaBattlePaginatedResponse
 from responses.sea_battle_ship_response import SeaBattleShipResponse
 from responses.sea_battle_turn_response import SeaBattleTurnResponse
@@ -38,7 +38,7 @@ async def sea_battles_paginated(
 @router.get("/progress")
 async def sea_battles_in_progress(
             db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
-        ) -> SeaBattleResponse:
+        ) -> List[SeaBattleResponse]:
     items = []
     if user_id is not None:
         sea_battles = db.query(SeaBattle).where(SeaBattle.Status == 1).filter(SeaBattle.user_id == user_id).all()
