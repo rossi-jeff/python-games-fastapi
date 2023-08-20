@@ -6,8 +6,10 @@ from models.guess_word_guess import GuessWordGuess
 from models.enums import RatingArray, GameStatus, GameStatusArray
 import math
 
+
 def UpdateGuessWord(db: Session, id: int, status: GameStatus, length: int):
-    guesses = db.query(GuessWordGuess).where(GuessWordGuess.guess_word_id == id).all()
+    guesses = db.query(GuessWordGuess).where(
+        GuessWordGuess.guess_word_id == id).all()
     perGreen = 10
     perBrown = 5
     perGuess = length * perGreen
@@ -20,9 +22,10 @@ def UpdateGuessWord(db: Session, id: int, status: GameStatus, length: int):
                 score = score + perGreen
             elif rating.Rating == 1:
                 score = score + perBrown
-    print("score",score)
-    db.query(GuessWord).where(GuessWord.id == id).update({"Score": score, "Status": GameStatusArray.index(status.name)})
+    db.query(GuessWord).where(GuessWord.id == id).update(
+        {"Score": score, "Status": GameStatusArray.index(status.name)})
     db.commit()
+
 
 def GuessWordStatus(green: int, length: int, guesses: int):
     status = GameStatus.Playing

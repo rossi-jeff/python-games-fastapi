@@ -27,50 +27,56 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/")
 async def guess_words_paginated(
-            Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
-        ) -> GuessWordPaginatedResponse:
+    Limit: int = 10, Offset: int = 0, db: Session = Depends(get_db)
+) -> GuessWordPaginatedResponse:
     count = db.query(GuessWord).where(GuessWord.Status != 1).count()
     items = []
     guess_words = db.query(GuessWord).where(GuessWord.Status != 1).order_by(
         GuessWord.Status.desc(),
         GuessWord.Score.desc()
-	).limit(Limit).offset(Offset).all()
+    ).limit(Limit).offset(Offset).all()
     for gw in guess_words:
         items.append(gw.as_dict())
     return {"Count": count, "Limit": Limit, "Offset": Offset, "Items": items}
 
+
 @router.get("/progress")
 async def guess_words_in_progress(
-            db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
-        ) -> List[GuessWordResponse]:
+    db: Session = Depends(get_db), user_id: Optional[str] = Depends(get_current_user)
+) -> List[GuessWordResponse]:
     items = []
     if user_id is not None:
-        guess_words = db.query(GuessWord).where(GuessWord.Status == 1).filter(GuessWord.user_id == user_id).all()
+        guess_words = db.query(GuessWord).where(
+            GuessWord.Status == 1).filter(GuessWord.user_id == user_id).all()
         for gw in guess_words:
             items.append(gw.as_dict())
     return items
 
+
 @router.get("/{guess_word_id}")
 async def get_guess_word_by_id(
-            guess_word_id: int, db: Session = Depends(get_db)
-        ) -> GuessWordResponse:
-    guess_word = db.query(GuessWord).where(GuessWord.id == guess_word_id).first()
+    guess_word_id: int, db: Session = Depends(get_db)
+) -> GuessWordResponse:
+    guess_word = db.query(GuessWord).where(
+        GuessWord.id == guess_word_id).first()
     if guess_word is None:
         raise HTTPException(status_code=404, detail="Guess Word not found")
     return guess_word.as_dict(True)
 
+
 @router.post("/", status_code=201)
 async def create_guess_word(
-            body: GuessWordCreate, 
-            db: Session = Depends(get_db), 
-            user_id: Optional[str] = Depends(get_current_user)
-        ) -> GuessWordResponse:
+    body: GuessWordCreate,
+    db: Session = Depends(get_db),
+    user_id: Optional[str] = Depends(get_current_user)
+) -> GuessWordResponse:
     guess_word = GuessWord(
-        word_id = body.WordId,
-        Score = 0,
-        Status = 1
+        word_id=body.WordId,
+        Score=0,
+        Status=1
     )
     if user_id is not None:
         guess_word.user_id = user_id
@@ -79,25 +85,28 @@ async def create_guess_word(
     db.refresh(guess_word)
     return guess_word.as_dict()
 
+
 @router.post("/{guess_word_id}/guess", status_code=201)
 async def take_guess_word_guess(
-            guess_word_id: int, body: GuessWordGuessPayload, db: Session = Depends(get_db)
-        ) -> GuessWordGuessResponse:
+    guess_word_id: int, body: GuessWordGuessPayload, db: Session = Depends(get_db)
+) -> GuessWordGuessResponse:
     guess_word_guess = GuessWordGuess(
-        guess_word_id = guess_word_id,
-        Guess = body.Guess
+        guess_word_id=guess_word_id,
+        Guess=body.Guess
     )
     db.add(guess_word_guess)
     db.commit()
     db.refresh(guess_word_guess)
-    green = CalculateGuessRatings(db,guess_word_guess.id,body.Guess,body.Word)
-    guesses = db.query(GuessWordGuess).where(GuessWordGuess.guess_word_id == guess_word_id).count()
-    status = GuessWordStatus(green,len(body.Word),guesses)
-    print("status",status.name)
+    green = CalculateGuessRatings(
+        db, guess_word_guess.id, body.Guess, body.Word)
+    guesses = db.query(GuessWordGuess).where(
+        GuessWordGuess.guess_word_id == guess_word_id).count()
+    status = GuessWordStatus(green, len(body.Word), guesses)
     if status != GameStatus.Playing:
-        UpdateGuessWord(db,guess_word_id,status,len(body.Word))
+        UpdateGuessWord(db, guess_word_id, status, len(body.Word))
     db.refresh(guess_word_guess)
     return guess_word_guess.as_dict()
+
 
 @router.post("/hint")
 async def get_guess_word_hints(body: GuessWordHint, db: Session = Depends(get_db)) -> List[str]:
@@ -105,13 +114,13 @@ async def get_guess_word_hints(body: GuessWordHint, db: Session = Depends(get_db
     words = db.query(Word).where(Word.Length == body.Length).all()
     for w in words:
         word = w.Word
-        if not MatchGreen(word,body.Green):
+        if not MatchGreen(word, body.Green):
             continue
-        if MatchGray(word,body.Gray,body.Green):
+        if MatchGray(word, body.Gray, body.Green):
             continue
-        if MatchBrown(word,body.Brown):
+        if MatchBrown(word, body.Brown):
             continue
-        if not IncludeAllBrown(word,body.Brown):
+        if not IncludeAllBrown(word, body.Brown):
             continue
         hints.append(word)
     return hints
