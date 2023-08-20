@@ -1,7 +1,27 @@
 from typing import List
 from .guess_word import IntListIndex
-from models.enums import TenGrandCategory
+from models.enums import TenGrandCategory, GameStatusArray
 from payloads.ten_grand_payload import TenGrandScoreOption
+from sqlalchemy.orm import Session
+from models.ten_grand import TenGrand
+from models.ten_grand_turn import TenGrandTurn
+
+
+def UpdateTenGrand(db: Session, id: int):
+    score = 0
+    ten_grand = db.query(TenGrand).where(TenGrand.id == id).first()
+    if ten_grand is None:
+        return
+    turns = db.query(TenGrandTurn).where(TenGrandTurn.ten_grand_id == id).all()
+    for turn in turns:
+        if turn.Score is not None:
+            score = score + turn.Score
+    ten_grand.Score = score
+    if score >= 10000:
+        ten_grand.Status = GameStatusArray.index("Won")
+    db.add(ten_grand)
+    db.commit()
+
 
 def MapDieFaces(dice: List[int]):
     dieMap = {}
@@ -17,12 +37,14 @@ def MapDieFaces(dice: List[int]):
         values.append(v)
     return dieMap, keys, values
 
+
 def ScoreOnes(dice: List[int]):
     score = 0
     for d in dice:
         if d == 1:
             score = score + 100
     return score
+
 
 def ScoreFives(dice: List[int]):
     score = 0
@@ -31,12 +53,14 @@ def ScoreFives(dice: List[int]):
             score = score + 50
     return score
 
+
 def ScoreFullHouse(dice: List[int]):
     score = 0
     _, _, values = MapDieFaces(dice)
-    if IntListIndex(3,values) != -1 and IntListIndex(2,values) != -1:
+    if IntListIndex(3, values) != -1 and IntListIndex(2, values) != -1:
         score = 1500
     return score
+
 
 def ScoreStraight(dice: List[int]):
     score = 0
@@ -46,12 +70,14 @@ def ScoreStraight(dice: List[int]):
         score = 2000
     return score
 
+
 def ScoreThreePair(dice: List[int]):
     score = 0
     _, _, values = MapDieFaces(dice)
     if ",".join(str(v) for v in values) == "2,2,2":
         score = 1500
     return score
+
 
 def ScoreDoubleThreeKind(dice: List[int]):
     score = 0
@@ -64,6 +90,7 @@ def ScoreDoubleThreeKind(dice: List[int]):
                 score = score + (k * 100)
     return score
 
+
 def ScoreThreeKind(dice: List[int]):
     score = 0
     dieMap, keys, _ = MapDieFaces(dice)
@@ -74,6 +101,7 @@ def ScoreThreeKind(dice: List[int]):
             else:
                 score = score + (k * 100)
     return score
+
 
 def ScoreFourKind(dice: List[int]):
     score = 0
@@ -86,6 +114,7 @@ def ScoreFourKind(dice: List[int]):
                 score = score + (k * 200)
     return score
 
+
 def ScoreFiveKind(dice: List[int]):
     score = 0
     dieMap, keys, _ = MapDieFaces(dice)
@@ -96,6 +125,7 @@ def ScoreFiveKind(dice: List[int]):
             else:
                 score = score + (k * 400)
     return score
+
 
 def ScoreSixKind(dice: List[int]):
     score = 0
@@ -108,12 +138,14 @@ def ScoreSixKind(dice: List[int]):
                 score = score + (k * 800)
     return score
 
+
 def UsedOnes(dice: List[int]):
     used: List[int] = []
     for d in dice:
         if d == 1:
             used.append(d)
     return used
+
 
 def UsedFives(dice: List[int]):
     used: List[int] = []
@@ -122,21 +154,24 @@ def UsedFives(dice: List[int]):
             used.append(d)
     return used
 
+
 def UsedAll(dice: List[int]):
     used: List[int] = []
     for d in dice:
         used.append(d)
     return used
 
+
 def UsedFullHouse(dice: List[int]):
     used: List[int] = []
     dieMap, keys, values = MapDieFaces(dice)
-    if IntListIndex(3,values) != -1 and IntListIndex(2,values) != -1:
+    if IntListIndex(3, values) != -1 and IntListIndex(2, values) != -1:
         for k in keys:
             if dieMap[k] == 2 or dieMap[k] == 3:
                 for idx in range(dieMap[k]):
                     used.append(k)
     return used
+
 
 def UsedStraight(dice: List[int]):
     used: List[int] = []
@@ -146,6 +181,7 @@ def UsedStraight(dice: List[int]):
         return UsedAll(dice)
     return used
 
+
 def UsedThreePair(dice: List[int]):
     used: List[int] = []
     _, _, values = MapDieFaces(dice)
@@ -153,12 +189,14 @@ def UsedThreePair(dice: List[int]):
         return UsedAll(dice)
     return used
 
+
 def UsedDoubleThreeKind(dice: List[int]):
     used: List[int] = []
     _, keys, values = MapDieFaces(dice)
     if ",".join(str(v) for v in values) == "3,3":
         return UsedAll(dice)
     return used
+
 
 def UsedThreeKind(dice: List[int]):
     used: List[int] = []
@@ -169,6 +207,7 @@ def UsedThreeKind(dice: List[int]):
                 used.append(k)
     return used
 
+
 def UsedFourKind(dice: List[int]):
     used: List[int] = []
     dieMap, keys, _ = MapDieFaces(dice)
@@ -177,6 +216,7 @@ def UsedFourKind(dice: List[int]):
             for idx in range(dieMap[k]):
                 used.append(k)
     return used
+
 
 def UsedFiveKind(dice: List[int]):
     used: List[int] = []
@@ -187,6 +227,7 @@ def UsedFiveKind(dice: List[int]):
                 used.append(k)
     return used
 
+
 def UsedSixKind(dice: List[int]):
     used: List[int] = []
     dieMap, keys, _ = MapDieFaces(dice)
@@ -195,15 +236,17 @@ def UsedSixKind(dice: List[int]):
             return UsedAll(dice)
     return used
 
+
 def RemoveUsedDice(dice: List[int], used: List[int]):
     remaining: List[int] = []
     for d in dice:
-        idx = IntListIndex(d,used)
+        idx = IntListIndex(d, used)
         if idx == -1:
             remaining.append(d)
         else:
             used.pop(idx)
     return remaining
+
 
 def TGCategoryScoreAndDice(cat: TenGrandCategory, dice: List[int]):
     score = 0
@@ -242,12 +285,13 @@ def TGCategoryScoreAndDice(cat: TenGrandCategory, dice: List[int]):
         used = UsedAll(dice)
     return score, used
 
+
 def TenGrandScoreOptions(dice: List[int]):
     Options: List[TenGrandScoreOption] = []
     for cat in TenGrandCategory:
         option = TenGrandScoreOption(
-            Score = 0,
-            Category = cat
+            Score=0,
+            Category=cat
         )
         if cat.name == "Ones":
             option.Score = ScoreOnes(dice)
@@ -269,7 +313,7 @@ def TenGrandScoreOptions(dice: List[int]):
             option.Score = ScoreFiveKind(dice)
         elif cat.name == "SixKind":
             option.Score = ScoreSixKind(dice)
-        
+
         if option.Score > 0 or option.Category == TenGrandCategory.CrapOut:
             Options.append(option)
     Options.sort(key=lambda o: o.Score, reverse=True)
