@@ -10,13 +10,16 @@ from utilities.guess_word import (
     MatchBrown,
     MatchGray,
     IncludeAllBrown,
-    CalculateGuessRatings
+    CalculateGuessRatings,
+    GuessWordStatus,
+    UpdateGuessWord
 )
 from models.guess_word_guess import GuessWordGuess
 from optional_auth import get_current_user
 from typing import Optional, List
 from responses.guess_word_response import GuessWordResponse, GuessWordPaginatedResponse
 from responses.guess_word_guess_response import GuessWordGuessResponse
+from models.enums import GameStatus
 
 router = APIRouter(
     prefix="/api/guess_word",
@@ -87,7 +90,12 @@ async def take_guess_word_guess(
     db.add(guess_word_guess)
     db.commit()
     db.refresh(guess_word_guess)
-    CalculateGuessRatings(db,guess_word_guess.id,body.Guess,body.Word)
+    green = CalculateGuessRatings(db,guess_word_guess.id,body.Guess,body.Word)
+    guesses = db.query(GuessWordGuess).where(GuessWordGuess.guess_word_id == guess_word_id).count()
+    status = GuessWordStatus(green,len(body.Word),guesses)
+    print("status",status.name)
+    if status != GameStatus.Playing:
+        UpdateGuessWord(db,guess_word_id,status,len(body.Word))
     db.refresh(guess_word_guess)
     return guess_word_guess.as_dict()
 
@@ -95,7 +103,6 @@ async def take_guess_word_guess(
 async def get_guess_word_hints(body: GuessWordHint, db: Session = Depends(get_db)) -> List[str]:
     hints = []
     words = db.query(Word).where(Word.Length == body.Length).all()
-    print("words",len(words))
     for w in words:
         word = w.Word
         if not MatchGreen(word,body.Green):

@@ -1,7 +1,36 @@
 from typing import List
 from sqlalchemy.orm import Session
 from models.guess_word_guess_rating import GuessWordGuessRating
-from models.enums import RatingArray
+from models.guess_word import GuessWord
+from models.guess_word_guess import GuessWordGuess
+from models.enums import RatingArray, GameStatus, GameStatusArray
+import math
+
+def UpdateGuessWord(db: Session, id: int, status: GameStatus, length: int):
+    guesses = db.query(GuessWordGuess).where(GuessWordGuess.guess_word_id == id).all()
+    perGreen = 10
+    perBrown = 5
+    perGuess = length * perGreen
+    maxGuesses = math.ceil((length * 3) / 2)
+    score = perGuess * maxGuesses
+    for guess in guesses:
+        score = score - perGuess
+        for rating in guess.ratings:
+            if rating.Rating == 2:
+                score = score + perGreen
+            elif rating.Rating == 1:
+                score = score + perBrown
+    print("score",score)
+    db.query(GuessWord).where(GuessWord.id == id).update({"Score": score, "Status": GameStatusArray.index(status.name)})
+    db.commit()
+
+def GuessWordStatus(green: int, length: int, guesses: int):
+    status = GameStatus.Playing
+    if green == length:
+        status = GameStatus.Won
+    elif guesses > math.ceil((length * 3)/2):
+        status = GameStatus.Lost
+    return status
 
 
 def CalculateGuessRatings(db: Session, guess_id: int, Guess: str, Word: str):
